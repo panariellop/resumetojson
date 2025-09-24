@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Resume to JSON Converter</title>
+        <style>
+            :root {
+                color-scheme: light dark;
+            }
+            *, *::before, *::after {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                background: radial-gradient(circle at top left, #5b8def, #1b1f3b);
+                color: #0f172a;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 48px 16px;
+            }
+            .card {
+                max-width: 860px;
+                width: 100%;
+                background: rgba(255, 255, 255, 0.92);
+                border-radius: 24px;
+                padding: 48px;
+                box-shadow: 0 24px 80px rgba(15, 23, 42, 0.25);
+                backdrop-filter: blur(12px);
+                color: #0f172a;
+            }
+            h1 {
+                font-size: clamp(2.4rem, 5vw, 3.6rem);
+                margin: 0 0 16px 0;
+                line-height: 1.1;
+            }
+            p.lead {
+                font-size: clamp(1.1rem, 2.5vw, 1.25rem);
+                margin-bottom: 32px;
+                color: #334155;
+            }
+            .feature-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 24px;
+                margin-bottom: 44px;
+                align-items: stretch;
+            }
+            .feature {
+                background: rgba(226, 232, 240, 0.6);
+                border-radius: 20px;
+                padding: 28px 32px;
+                position: relative;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .feature::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: -38px;
+                width: 38px;
+                height: 3px;
+                background: linear-gradient(90deg, rgba(59, 130, 246, 0.0) 0%, rgba(59, 130, 246, 0.45) 100%);
+                transform: translateY(-50%);
+            }
+           
+            .feature:last-child::after {
+                display: none;
+            }
+            .feature:first-child::before {
+                display: none;
+            }
+            .feature:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 22px 45px rgba(15, 23, 42, 0.15);
+            }
+            .step-number {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: rgba(59, 130, 246, 0.16);
+                color: #1d4ed8;
+                font-weight: 700;
+                margin-bottom: 16px;
+                font-size: 0.95rem;
+            }
+            .feature h3 {
+                margin: 0 0 8px 0;
+                font-size: 1.05rem;
+                color: #1e3a8a;
+            }
+            .feature p {
+                margin: 0;
+                color: #475569;
+                line-height: 1.5;
+            }
+            .cta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                align-items: center;
+            }
+            .cta a {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 14px 22px;
+                border-radius: 14px;
+                text-decoration: none;
+                font-weight: 600;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .cta a.primary {
+                background: #1d4ed8;
+                color: white;
+                box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
+            }
+            .cta a.secondary {
+                color: #1d4ed8;
+            }
+            .cta a:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 20px 40px rgba(37, 99, 235, 0.3);
+            }
+            .demo-box {
+                margin-top: 32px;
+                border-radius: 18px;
+                border: 1px solid rgba(148, 163, 184, 0.35);
+                padding: 24px;
+                background: rgba(248, 250, 252, 0.9);
+            }
+            .upload-box {
+                margin-top: 32px;
+                border-radius: 18px;
+                border: 1px solid rgba(148, 163, 184, 0.35);
+                padding: 24px;
+                background: rgba(255, 255, 255, 0.95);
+                display: grid;
+                gap: 16px;
+            }
+            .upload-box h2 {
+                margin: 0;
+                font-size: 1.4rem;
+            }
+            .upload-controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                align-items: center;
+            }
+            .upload-controls input[type="file"] {
+                width: 100%;
+                max-width: 400px;  
+                padding: 10px 12px;
+                border-radius: 12px;
+                border: 1px solid rgba(148, 163, 184, 0.6);
+                background: rgba(241, 245, 249, 0.9);
+                color: inherit;
+            }
+            .upload-controls button {
+                padding: 12px 18px;
+                border-radius: 12px;
+                border: none;
+                background: #1d4ed8;
+                color: white;
+                font-weight: 600;
+                cursor: pointer;
+                transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+                box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+            }
+            .upload-controls button:disabled {
+                cursor: not-allowed;
+                opacity: 0.65;
+                box-shadow: none;
+            }
+            .upload-controls button:not(:disabled):hover {
+                transform: translateY(-2px);
+                box-shadow: 0 18px 35px rgba(37, 99, 235, 0.32);
+            }
+            .upload-status {
+                font-size: 0.95rem;
+                color: #475569;
+            }
+            .upload-error {
+                color: #dc2626;
+            }
+            pre {
+                margin: 0;
+                background: rgba(15, 23, 42, 0.85);
+                color: #e2e8f0;
+                padding: 18px;
+                border-radius: 12px;
+                overflow-x: auto;
+            }
+            code {
+                font-family: "Fira Code", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            }
+            footer {
+                margin-top: 40px;
+                font-size: 0.85rem;
+                color: #64748b;
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            @media (max-width: 960px) {
+                .feature-grid {
+                    grid-template-columns: 1fr;
+                    gap: 28px;
+                }
+                .feature::before {
+                    left: 50%;
+                    right: auto;
+                    width: 3px;
+                    height: 32px;
+                    top: -32px;
+                    transform: translate(-50%, 0);
+                    background: linear-gradient(180deg, rgba(59, 130, 246, 0.45) 0%, rgba(59, 130, 246, 0.0) 100%);
+                }
+                .feature::after {
+                    left: 50%;
+                    right: auto;
+                    top: auto;
+                    bottom: -26px;
+                    transform: translate(-50%, 0) rotate(90deg);
+                }
+                .feature:first-child::before {
+                    display: none;
+                }
+            }
+            @media (max-width: 640px) {
+                .card {
+                    padding: 32px 24px;
+                }
+                .cta {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+                .feature {
+                    padding: 24px;
+                }
+                .feature::after {
+                    display: none;
+                }
+                body {
+                    padding: 32px 12px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <main class="card">
+            <h1>Transform Resumes into Structured JSON</h1>
+            <p class="lead">This API ingests PDF resumes, analyzes their content with Anthropic's Claude models, and responds with rich JSON that is ready for downstream processing.</p>
+
+            <div class="feature-grid">
+                <section class="feature">
+                    <span class="step-number">1</span>
+                    <h3>Upload a PDF</h3>
+                    <p>Send any PDF resume to <code>/resume-to-json/</code> using a standard multipart form upload.</p>
+                </section>
+                <section class="feature">
+                    <span class="step-number">2</span>
+                    <h3>LLM Parsing</h3>
+                    <p>An LLM extracts structured data such as experience, skills, and education.</p>
+                </section>
+                <section class="feature">
+                    <span class="step-number">3</span>
+                    <h3>JSON Output</h3>
+                    <p>Receive a JSON document you can store, search, or feed into automations immediately.</p>
+                </section>
+            </div>
+
+            <div class="cta">
+                <a class="primary" href="/docs" target="_blank" rel="noreferrer">Explore the API</a>
+                <a class="secondary" href="https://fastapi.tiangolo.com/" target="_blank" rel="noreferrer">Powered by FastAPI</a>
+            </div>
+
+            <div class="demo-box">
+                <h2 style="margin-top: 0;">Quick Example</h2>
+                <p style="margin-bottom: 12px; color: #475569;">Try the request below to see the JSON response structure:</p>
+                <pre><code id="snippet">curl -X POST 
+  -F "file=@resume.pdf" 
+  https://&lt;your-host&gt;/resume-to-json/</code></pre>
+            </div>
+
+            <section class="upload-box">
+                <h2>Try It In The Browser</h2>
+                <p style="margin: 0; color: #475569;">Select a PDF resume and we will call the API for you. The JSON response appears below.</p>
+                <form id="upload-form">
+                    <div class="upload-controls">
+                        <input type="file" id="resume-file" name="file" accept="application/pdf" required>
+                        <button type="submit" id="upload-button" disabled>Convert to JSON</button>
+                    </div>
+                </form>
+                <div class="upload-status" id="upload-status">No file selected.</div>
+                <pre style="display: none;" id="json-response"><code id="json-output"></code></pre>
+            </section>
+
+            <footer>
+                <span id="status">API status: checking...</span>
+                <span>Need help? Review the interactive docs at <code>/docs</code>.</span>
+            </footer>
+        </main>
+
+        <script>
+            async function checkHealth() {
+                try {
+                    const response = await fetch('/health');
+                    if (!response.ok) {
+                        throw new Error('Service unavailable');
+                    }
+                    const data = await response.json();
+                    document.getElementById('status').textContent = `API status: ${data.status}`;
+                } catch (error) {
+                    document.getElementById('status').textContent = 'API status: offline';
+                }
+            }
+            checkHealth();
+
+            const uploadForm = document.getElementById('upload-form');
+            const resumeInput = document.getElementById('resume-file');
+            const uploadButton = document.getElementById('upload-button');
+            const uploadStatus = document.getElementById('upload-status');
+            const jsonResponse = document.getElementById('json-response');
+            const jsonOutput = document.getElementById('json-output');
+
+            resumeInput.addEventListener('change', () => {
+                if (resumeInput.files && resumeInput.files.length > 0) {
+                    uploadButton.disabled = false;
+                    uploadStatus.textContent = `Ready to upload: ${resumeInput.files[0].name}`;
+                    uploadStatus.classList.remove('upload-error');
+                } else {
+                    uploadButton.disabled = true;
+                    uploadStatus.textContent = 'No file selected.';
+                }
+                jsonResponse.style.display = 'none';
+                jsonOutput.textContent = '';
+            });
+
+            uploadForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (!resumeInput.files || resumeInput.files.length === 0) {
+                    uploadStatus.textContent = 'Please choose a PDF resume first.';
+                    uploadStatus.classList.add('upload-error');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', resumeInput.files[0]);
+
+                uploadButton.disabled = true;
+                uploadStatus.textContent = 'Uploading and converting…';
+                uploadStatus.classList.remove('upload-error');
+                jsonResponse.style.display = 'none';
+                jsonOutput.textContent = '';
+
+                try {
+                    const response = await fetch('/resume-to-json/', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.detail || 'Conversion failed');
+                    }
+
+                    uploadStatus.textContent = 'Conversion complete. JSON response shown below.';
+                    jsonOutput.textContent = JSON.stringify(data, null, 2);
+                    jsonResponse.style.display = 'block';
+                } catch (error) {
+                    uploadStatus.textContent = error.message || 'Something went wrong while converting the resume.';
+                    uploadStatus.classList.add('upload-error');
+                } finally {
+                    uploadButton.disabled = false;
+                }
+            });
+        </script>
+    </body>
+    </html>
